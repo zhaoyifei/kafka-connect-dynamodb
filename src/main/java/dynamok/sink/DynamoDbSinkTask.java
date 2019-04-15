@@ -19,14 +19,7 @@ package dynamok.sink;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
-import com.amazonaws.services.dynamodbv2.model.LimitExceededException;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededException;
-import com.amazonaws.services.dynamodbv2.model.PutRequest;
-import com.amazonaws.services.dynamodbv2.model.WriteRequest;
+import com.amazonaws.services.dynamodbv2.model.*;
 import dynamok.Version;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -87,6 +80,28 @@ public class DynamoDbSinkTask extends SinkTask {
 
         client.configureRegion(config.region);
         remainingRetries = config.maxRetries;
+
+        if(config.autoCreate){
+            String[] topics = config.topics.split(",");
+            for(String topic:topics){
+                String table_name = config.tableFormat.replace("${topic}", topic);
+                TableDescription table_info =
+                        client.describeTable(table_name).getTable();
+                if (table_info != null) {
+
+                    CreateTableRequest request = new CreateTableRequest()
+                            .withAttributeDefinitions(new AttributeDefinition(
+                                    "id", ScalarAttributeType.S))
+                            .withKeySchema(new KeySchemaElement("id", KeyType.HASH))
+                            .withProvisionedThroughput(new ProvisionedThroughput(
+                                    new Long(10), new Long(10)))
+                            .withTableName(table_name);
+                    CreateTableResult result = client.createTable(request);
+                    log.info("create table: "+result.getTableDescription().getTableName());
+                }
+            }
+        }
+
     }
 
     @Override
