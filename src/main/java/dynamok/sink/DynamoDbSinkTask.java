@@ -16,6 +16,7 @@
 
 package dynamok.sink;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -85,10 +86,9 @@ public class DynamoDbSinkTask extends SinkTask {
             String[] topics = config.topics.split(",");
             for(String topic:topics){
                 String table_name = config.tableFormat.replace("${topic}", topic);
-                TableDescription table_info =
-                        client.describeTable(table_name).getTable();
-                if (table_info != null) {
-
+                try {
+                    client.describeTable(table_name);
+                }catch (AmazonServiceException e) {
                     CreateTableRequest request = new CreateTableRequest()
                             .withAttributeDefinitions(new AttributeDefinition(
                                     "id", ScalarAttributeType.S))
@@ -99,6 +99,7 @@ public class DynamoDbSinkTask extends SinkTask {
                     CreateTableResult result = client.createTable(request);
                     log.info("create table: "+result.getTableDescription().getTableName());
                 }
+
             }
         }
 
