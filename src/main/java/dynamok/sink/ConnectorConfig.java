@@ -89,6 +89,8 @@ class ConnectorConfig extends AbstractConfig {
                     ConfigDef.Importance.MEDIUM, "The time in milliseconds to wait following an error before a retry attempt is made.")
             .define(Keys.AUTO_CREATE, ConfigDef.Type.BOOLEAN, true,
                     ConfigDef.Importance.LOW, "Whether to create table automaticly.")
+            .define(Keys.TOPICS, ConfigDef.Type.STRING, "",
+                    ConfigDef.Importance.LOW, "Topics. " )
             ;
 
     final Regions region;
